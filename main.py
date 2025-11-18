@@ -5,6 +5,12 @@ from openai import OpenAI
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
+# Перевірка токенів
+if TELEGRAM_TOKEN is None:
+    raise ValueError("TELEGRAM_TOKEN не встановлено!")
+if OPENAI_API_KEY is None:
+    raise ValueError("OPENAI_API_KEY не встановлено!")
+
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 client = OpenAI(api_key=OPENAI_API_KEY)
 
@@ -16,12 +22,18 @@ def start(message):
 def chat(message):
     user_text = message.text
 
-    response = client.chat.completions.create(
+    # ❗ НОВИЙ синтаксис OpenAI
+    completion = client.chat.completions.create(
         model="gpt-4o-mini",
-        messages=[{"role": "user", "content": user_text}]
+        messages=[
+            {"role": "system", "content": "Ти дружній помічник."},
+            {"role": "user", "content": user_text}
+        ]
     )
 
-    answer = response.choices[0].message["content"]
+    # ❗ Правильний доступ до контенту (новий формат)
+    answer = completion.choices[0].message["content"]
+
     bot.reply_to(message, answer)
 
-bot.polling()
+bot.polling(none_stop=True)
